@@ -48,7 +48,7 @@ class PostView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        posts = Post.objects.all()
+        posts = Post.objects.all().order_by('-publish_date')
         return Response(PostSerializer(posts, many=True).data)
 
     def post(self, request):
@@ -70,7 +70,7 @@ class CreatePostView(APIView):
             post = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
 class DeletePostView(APIView):
     def delete(self, request, pk):
         try:
@@ -148,3 +148,17 @@ class PostLikesView(APIView):
             for like in likes
         ]
         return JsonResponse({'liked_users': liked_users}, safe=False)
+
+class DeleteLikeView(APIView):
+    def delete(self, request, like_id):
+        try:
+            like = Like.objects.get(id=like_id)
+        except:
+            return Response({"Message": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != like.user_id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        like.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
