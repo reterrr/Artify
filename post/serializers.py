@@ -38,6 +38,18 @@ class CommentSerializer(ModelSerializer):
         fields = ('contents', 'publish_date', 'post_id', 'user_id')
         read_only_fields = ['user_id', 'post_id', 'publish_date']
 
+class CreateCommentSerializer(ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)
+    class Meta:
+        model = Comment
+        fields = ('contents', 'publish_date', 'post_id', 'user_id')
+
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_id')
+        user = User.objects.get(id=user_id)
+        comment = Comment.objects.create(user_id=user, **validated_data)
+        return comment
+
 class LikeSerializer(ModelSerializer):
     class Meta:
         model = Like
