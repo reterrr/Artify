@@ -149,10 +149,16 @@ class PostLikesView(APIView):
         ]
         return JsonResponse({'liked_users': liked_users}, safe=False)
 
+class LikeView(APIView):
+    def get(self, request, post_id, user_id):
+        like = get_object_or_404(Like, post_id=post_id, user_id=user_id)
+        serializer = LikeSerializer(like)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class DeleteLikeView(APIView):
-    def delete(self, request, like_id):
+    def delete(self, request, post_id, user_id):
         try:
-            like = Like.objects.get(id=like_id)
+            like = get_object_or_404(Like, post_id=post_id, user_id=user_id)
         except:
             return Response({"Message": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 

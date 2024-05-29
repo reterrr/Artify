@@ -23,6 +23,6 @@ class LimitedUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'profile_image']
+        fields = ['name', 'profile_image', 'id']
 
         
