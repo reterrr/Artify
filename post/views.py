@@ -8,8 +8,13 @@ from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer
 from user.models import User
 from rest_framework.decorators import permission_classes
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class UserCommentsView(APIView):
     permission_classes = [AllowAny]
@@ -48,11 +53,14 @@ class PostCommentsView(APIView):
         return JsonResponse({'comments': comments_data}, safe=False)
 
 class PostView(APIView):
+    pagination_class = StandardResultsSetPagination()
+    
     def get(self, request):
         posts = Post.objects.all()
-
-        return Response(PostSerializer(posts, many=True).data)
-
+        paginated_posts = self.pagination_class.paginate_queryset(posts, request)
+        serializer = PostSerializer(paginated_posts, many=True)
+        return self.pagination_class.get_paginated_response(serializer.data)
+    
     @permission_classes([IsAuthenticated])
     def post(self, request):
         serializer = PostSerializer(data=request.data)
