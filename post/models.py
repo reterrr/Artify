@@ -15,7 +15,7 @@ class Post(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     category_id = models.ForeignKey(Category, null=True, on_delete=models.SET_NULL)
     #Many-to-many relations
-    post_images = models.ManyToManyField(Image, blank=True, related_name='post_images')
+    post_images = models.ManyToManyField(Image, blank=True, null=True, related_name='post_images')
     post_tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):

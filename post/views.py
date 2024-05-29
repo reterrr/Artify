@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Post, Comment, Like
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer, CreatePostSerializer, CreateCommentSerializer
 from user.models import User
 from rest_framework.decorators import permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -17,7 +17,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 class UserCommentsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         
@@ -41,38 +41,40 @@ class UserCommentsView(APIView):
         return JsonResponse({'user': user_data, 'comments': comments_data}, safe=False)
 
 class PostCommentsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         
         comments = Comment.objects.filter(post_id=post.id)
-        comments_data = list(comments.values('id', 'user_id', 'contents', 'publish_date'))
         
-      
-        
-        return JsonResponse({'comments': comments_data}, safe=False)
+        return Response(CommentSerializer(comments, many=True).data)
 
 class PostView(APIView):
-    pagination_class = StandardResultsSetPagination()
-    
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        posts = Post.objects.all()
-        paginated_posts = self.pagination_class.paginate_queryset(posts, request)
-        serializer = PostSerializer(paginated_posts, many=True)
-        return self.pagination_class.get_paginated_response(serializer.data)
-    
-    @permission_classes([IsAuthenticated])
+        posts = Post.objects.all().order_by('-publish_date')
+        return Response(PostSerializer(posts, many=True).data)
+
     def post(self, request):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
+        
         serializer = PostSerializer(data=request.data)
-
         if serializer.is_valid():
-            post = serializer.create(serializer.validated_data)
-            post.save()
-
+            post = serializer.save()
             return Response(status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class CreatePostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CreatePostSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            post = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeletePostView(APIView):
     def delete(self, request, pk):
@@ -91,8 +93,8 @@ class DeletePostView(APIView):
 class FindPostView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, pk):
-        if request.user != Post.objects.get(id=pk).user_id:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+        # if request.user != Post.objects.get(id=pk).user_id:
+            # return Response(status=status.HTTP_403_FORBIDDEN)
 
         try:
             post = Post.objects.get(id=pk)
@@ -151,3 +153,32 @@ class PostLikesView(APIView):
             for like in likes
         ]
         return JsonResponse({'liked_users': liked_users}, safe=False)
+
+class LikeView(APIView):
+    def get(self, request, post_id, user_id):
+        like = get_object_or_404(Like, post_id=post_id, user_id=user_id)
+        serializer = LikeSerializer(like)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class DeleteLikeView(APIView):
+    def delete(self, request, post_id, user_id):
+        try:
+            like = get_object_or_404(Like, post_id=post_id, user_id=user_id)
+        except:
+            return Response({"Message": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != like.user_id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        like.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CommentView(APIView):
+    def post(self, request):
+        serializer = CreateCommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

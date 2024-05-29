@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'first_name', 'last_name', 'bio', 'email', 'phone', 'profile_image_url', 'follower_count', 'following_count']
+        fields = ['id', 'name', 'first_name', 'last_name', 'bio', 'email', 'phone', 'profile_image_url', 'follower_count', 'following_count']
 
     def get_profile_image_url(self, obj):
         if obj.profile_image:
@@ -18,3 +18,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_following_count(self, obj):
         return obj.following_count()
+        
+class LimitedUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['name', 'profile_image', 'id']
+
+        
