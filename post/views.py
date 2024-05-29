@@ -5,14 +5,14 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Post, Comment, Like
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer, CreatePostSerializer
 from user.models import User
 from rest_framework.decorators import permission_classes
 
 # Create your views here.
 
 class UserCommentsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         
@@ -36,36 +36,41 @@ class UserCommentsView(APIView):
         return JsonResponse({'user': user_data, 'comments': comments_data}, safe=False)
 
 class PostCommentsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         
         comments = Comment.objects.filter(post_id=post.id)
-        comments_data = list(comments.values('id', 'user_id', 'contents', 'publish_date'))
         
-      
-        
-        return JsonResponse({'comments': comments_data}, safe=False)
+        return Response(CommentSerializer(comments, many=True).data)
 
 class PostView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         posts = Post.objects.all()
-
         return Response(PostSerializer(posts, many=True).data)
 
-    @permission_classes([IsAuthenticated])
     def post(self, request):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
+        
         serializer = PostSerializer(data=request.data)
-
         if serializer.is_valid():
-            post = serializer.create(serializer.validated_data)
-            post.save()
-
+            post = serializer.save()
             return Response(status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class CreatePostView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        serializer = CreatePostSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            post = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class DeletePostView(APIView):
     def delete(self, request, pk):
         try:
@@ -83,8 +88,8 @@ class DeletePostView(APIView):
 class FindPostView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, pk):
-        if request.user != Post.objects.get(id=pk).user_id:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+        # if request.user != Post.objects.get(id=pk).user_id:
+            # return Response(status=status.HTTP_403_FORBIDDEN)
 
         try:
             post = Post.objects.get(id=pk)

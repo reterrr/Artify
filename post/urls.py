@@ -1,9 +1,9 @@
 from django.urls import path
-from .views import PostView, DeletePostView, FindPostView, UserCommentsView, PostCommentsView, PostLikesView, CreateLikeView
+from .views import PostView, DeletePostView, FindPostView, UserCommentsView, PostCommentsView, PostLikesView, CreateLikeView, CreatePostView
 
 urlpatterns = [
     path('list', PostView.as_view()),
-    path('create', PostView.as_view()),
+    path('create', CreatePostView.as_view()),
     path('<int:pk>/delete', DeletePostView.as_view()),
     path('<int:pk>/get/', FindPostView.as_view()),
     path('user/<int:user_id>/comments', UserCommentsView.as_view()),

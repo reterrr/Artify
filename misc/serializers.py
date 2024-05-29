@@ -6,3 +6,4 @@ class ImageSerializer(serializers.ModelSerializer):
         model = Image
         fields = ['file', 'uploaded_at']
 
+        
