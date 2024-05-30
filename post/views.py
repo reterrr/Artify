@@ -50,12 +50,15 @@ class PostCommentsView(APIView):
         return Response(CommentSerializer(comments, many=True).data)
 
 class PostView(APIView):
-    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination()
 
     def get(self, request):
         posts = Post.objects.all().order_by('-publish_date')
-        return Response(PostSerializer(posts, many=True).data)
+        paginated_posts = self.pagination_class.paginate_queryset(posts, request)
+        serializer = PostSerializer(paginated_posts, many=True)
+        return self.pagination_class.get_paginated_response(serializer.data)
 
+    @permission_classes([IsAuthenticated])
     def post(self, request):
         self.permission_classes = [IsAuthenticated]
         self.check_permissions(request)
