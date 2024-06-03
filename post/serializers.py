@@ -12,18 +12,16 @@ class PostSerializer(ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ('id', 'title', 'description', 'likes_count',  'publish_date', 'user_id', 'category_id', 'post_images')
+        fields = ('id', 'title', 'description', 'likes_count',  'publish_date', 'user_id', 'category', 'post_images')
         
     def get_likes_count(self, obj):
         return Like.objects.filter(post_id=obj.id).count()
 
 class CreatePostSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(write_only=True)
-  
-
     class Meta:
         model = Post
-        fields = ('description', 'title', 'user_id')
+        fields = ('description', 'title', 'user_id', 'category')
 
     def create(self, validated_data):
         user_id = validated_data.pop('user_id')
