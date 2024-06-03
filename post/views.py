@@ -69,7 +69,7 @@ class PostView(APIView):
     def get(self, request):
         keyword = request.query_params.get('keyword', None)
         if keyword:
-            posts = Post.objects.filter(title__icontains=keyword) | Post.objects.filter(description__icontains=keyword)
+            posts = Post.objects.filter(title__icontains=keyword).order_by('-publish_date') | Post.objects.filter(description__icontains=keyword).order_by('-publish_date')
         else:
             posts = Post.objects.all().order_by('-publish_date')
         
