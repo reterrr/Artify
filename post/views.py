@@ -49,19 +49,33 @@ class PostCommentsView(APIView):
         
         return Response(CommentSerializer(comments, many=True).data)
 
-class PostView(APIView):
-    permission_classes = [IsAuthenticated]
+# class PostView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
-        keyword = request.GET.get('keyword', '')
+#     def get(self, request, *args, **kwargs):
+#         keyword = request.GET.get('keyword', '')
+#         if keyword:
+#             posts = Post.objects.filter(title__icontains=keyword) | Post.objects.filter(description__icontains=keyword)
+#         else:
+#             posts = Post.objects.all().order_by('-publish_date')
+#             return Response(PostSerializer(posts, many=True).data)
+
+#         serializer = PostSerializer(posts, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class PostView(APIView):
+    pagination_class = StandardResultsSetPagination()
+
+    def get(self, request):
+        keyword = request.query_params.get('keyword', None)
         if keyword:
             posts = Post.objects.filter(title__icontains=keyword) | Post.objects.filter(description__icontains=keyword)
         else:
             posts = Post.objects.all().order_by('-publish_date')
-            return Response(PostSerializer(posts, many=True).data)
-
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        paginated_posts = self.pagination_class.paginate_queryset(posts, request)
+        serializer = PostSerializer(paginated_posts, many=True)
+        return self.pagination_class.get_paginated_response(serializer.data)
 
     def post(self, request):
         self.permission_classes = [IsAuthenticated]
