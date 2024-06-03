@@ -47,9 +47,16 @@ class PostCommentsView(APIView):
 class PostView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        posts = Post.objects.all().order_by('-publish_date')
-        return Response(PostSerializer(posts, many=True).data)
+    def get(self, request, *args, **kwargs):
+        keyword = request.GET.get('keyword', '')
+        if keyword:
+            posts = Post.objects.filter(title__icontains=keyword) | Post.objects.filter(description__icontains=keyword)
+        else:
+            posts = Post.objects.all().order_by('-publish_date')
+            return Response(PostSerializer(posts, many=True).data)
+
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         self.permission_classes = [IsAuthenticated]
