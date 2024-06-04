@@ -18,7 +18,7 @@ from .models import User
 class UserPostView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        posts = Post.objects.filter(user_id=request.user.id)
+        posts = Post.objects.filter(user_id=request.user.id).order_by('-publish_date')
         serializer = PostSerializer(posts, many=True)
 
         return Response({'posts': serializer.data})
