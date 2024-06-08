@@ -11,9 +11,32 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from misc.models import Image
 
 from .models import User
+
 # Create your views here.
+
+class UpdateUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        data = request.data.copy()
+
+        # Obsługa pola profile_image
+        if 'profile_image' in request.FILES:
+            image = Image.objects.create(file=request.FILES['profile_image'])
+            user.profile_image = image
+
+        serializer = UserSerializer(user, data=data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            user.save()  # Upewnij się, że zapisujesz użytkownika po przypisaniu obrazu
+            return Response({'status': 'success', 'data': serializer.data}, status=status.HTTP_200_OK)
+        
+        return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserPostView(APIView):
     permission_classes = [IsAuthenticated]

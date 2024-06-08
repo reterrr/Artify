@@ -19,6 +19,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 class UserCommentsView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         
@@ -33,7 +34,7 @@ class UserCommentsView(APIView):
             'last_name': user.last_name,
             'bio': user.bio,
             'phone': user.phone,
-            'profile_image': user.profile_image.url if user.profile_image else None,
+            'profile_image': user.profile_image.file.url if user.profile_image else None,
             'is_active': user.is_active,
             'is_admin': user.is_admin,
             'created_at': user.created_at,

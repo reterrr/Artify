@@ -1,4 +1,7 @@
-from user.views import UserPostView, OwnUserDetailView, UserDetailByIdView, UserPostByIdView, UserEventsView, UserEventsByIdView
+from user.views import (
+    UserPostView, OwnUserDetailView, UserDetailByIdView, UserPostByIdView, 
+    UserEventsView, UserEventsByIdView, UpdateUserProfileView
+)
 from django.urls import path
 
 urlpatterns = [
@@ -7,5 +10,6 @@ urlpatterns = [
     path('info/', OwnUserDetailView.as_view(), name='user_info'),
     path('info/<int:user_id>/', UserDetailByIdView.as_view(), name='public-user-detail'),
     path('events/', UserEventsView.as_view(), name='user_events'),
-    path('events/<int:user_id>/', UserEventsByIdView.as_view(), name='user-events-by-id')
+    path('events/<int:user_id>/', UserEventsByIdView.as_view(), name='user-events-by-id'),
+    path('update/', UpdateUserProfileView.as_view(), name='update_user_profile')  
 ]
