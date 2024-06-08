@@ -13,7 +13,7 @@ class Post(models.Model):
     description = models.TextField(null=True)
     #Foreign Keys:
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    category_id = models.ForeignKey(Category, null=True, on_delete=models.SET_NULL)
+    category = models.CharField(max_length=64, null=True)
     #Many-to-many relations
     post_images = models.ManyToManyField(Image, blank=True, null=True, related_name='post_images')
     post_tags = models.ManyToManyField(Tag, blank=True)

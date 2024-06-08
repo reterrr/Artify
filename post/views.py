@@ -9,6 +9,7 @@ from .serializers import PostSerializer, CommentSerializer, LikeSerializer, Crea
 from user.models import User
 from rest_framework.decorators import permission_classes
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Create your views here.
 class StandardResultsSetPagination(PageNumberPagination):
@@ -49,31 +50,50 @@ class PostCommentsView(APIView):
         
         return Response(CommentSerializer(comments, many=True).data)
 
+# class PostView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request, *args, **kwargs):
+#         keyword = request.GET.get('keyword', '')
+#         if keyword:
+#             posts = Post.objects.filter(title__icontains=keyword) | Post.objects.filter(description__icontains=keyword)
+#         else:
+#             posts = Post.objects.all().order_by('-publish_date')
+#             return Response(PostSerializer(posts, many=True).data)
+
+#         serializer = PostSerializer(posts, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
 class PostView(APIView):
-    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination()
 
     def get(self, request):
-        posts = Post.objects.all().order_by('-publish_date')
-        return Response(PostSerializer(posts, many=True).data)
-
-    def post(self, request):
-        self.permission_classes = [IsAuthenticated]
-        self.check_permissions(request)
+        keyword = request.query_params.get('keyword', None)
+        page = request.query_params.get('page', None)
         
-        serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
-            post = serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if keyword:
+            posts = Post.objects.filter(title__icontains=keyword).order_by('-publish_date') | Post.objects.filter(description__icontains=keyword).order_by('-publish_date')
+        else:
+            posts = Post.objects.all().order_by('-publish_date')
+        
+        if page:
+            paginated_posts = self.pagination_class.paginate_queryset(posts, request)
+            serializer = PostSerializer(paginated_posts, many=True)
+            return self.pagination_class.get_paginated_response(serializer.data)
+        else:
+            serializer = PostSerializer(posts, many=True)
+            return Response(serializer.data)
 
 class CreatePostView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
         serializer = CreatePostSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             post = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print(serializer.errors)  # Debugowanie błędów walidacji
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeletePostView(APIView):
