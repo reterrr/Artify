@@ -32,3 +32,17 @@ class AddEventView(APIView):
             serializer.save(user_id=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class DeleteEventView(APIView):
+    def delete(self, request, pk):
+        try:
+            event = Event.objects.get(id=pk)
+        except:
+            return Response({"Message": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != event.user_id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        event.delete()
+
+        return Response({"Message": "Event deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
