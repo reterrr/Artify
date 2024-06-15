@@ -16,7 +16,7 @@ class EventView(APIView):
     pagination_class = StandardResultsSetPagination()
 
     def get(self, request):
-        posts = Event.objects.all().order_by('-date')
+        posts = Event.objects.all().order_by('date')
         paginated_posts = self.pagination_class.paginate_queryset(posts, request)
         serializer = EventSerializer(paginated_posts, many=True)
         return self.pagination_class.get_paginated_response(serializer.data)
@@ -27,9 +27,13 @@ class AddEventView(APIView):
     def post(self, request):
         data = request.data.copy()
         data['user_id'] = request.user.id
+        
+        if 'event_image' in request.FILES:
+            data['event_image'] = request.FILES['event_image']
+        
         serializer = CreateEventSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(user_id=request.user)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
