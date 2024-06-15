@@ -42,6 +42,20 @@ class UserCommentsView(APIView):
         }
         return JsonResponse({'user': user_data, 'comments': comments_data}, safe=False)
 
+class CommentDeleteView(APIView):
+    print("huj")
+    def delete(self, request, comment_id):
+        try:
+            comment = Comment.objects.get(id=comment_id)
+        except Comment.DoesNotExist:
+            return Response({"Message": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+        if request.user.id != comment.user_id.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        comment.delete()
+
+        return Response({"Message": "Comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
 class PostCommentsView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, post_id):
@@ -138,18 +152,6 @@ class CommentCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class CommentDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, comment_id):
-        try:
-            comment = Comment.objects.get(id=comment_id, author=request.user)
-        except Comment.DoesNotExist:
-            return Response({"error": "Comment not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
-        
-        comment.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class CreateLikeView(APIView):
     def post(self, request):
